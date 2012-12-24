@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # URL shortener services (shorten and expand URLs).
-# Copyright (c) 2009, Mario Vilas
+# Copyright (c) 2009-2012, Mario Vilas
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -61,59 +61,38 @@ verbose = False
 # Currently supported URL shortener services.
 # All of them issue an HTTP GET request and expect a simple text response.
 api = {
-
-    'bit.ly'        :   'http://bit.ly/api?url=%s',
-    'cli.gs'        :   'http://cli.gs/api/v1/cligs/create?appid=urlshorten.py&url=%s',
-    'cru.ms'        :   'http://cru.ms/?module=ShortURL&file=Add&mode=API&url=%s',
-    'easyuri.com'   :   'http://easyuri.com/api.php?link=%s',
     'is.gd'         :   'http://is.gd/api.php?longurl=%s',
     'ito.mx'        :   'http://ito.mx/?module=ShortURL&file=Add&mode=API&url=%s',
-    'kl.am'         :   'http://kl.am/api/shorten/?url=%s&format=text',
     'migre.me'      :   'http://migre.me/api.txt?url=%s',
-    'onodot.com'    :   'http://onodot.com/api.php?url=%s',
-    'shrten.com'    :   'http://shrten.com/api?url=%s',
-    'www.thisurl.com':  'http://www.thisurl.com/?module=ShortURL&file=Add&mode=API&url=%s',
-    'thurly.net'    :   'http://thurly.net/api.php?id=%s',
+    'ta.gd'         :   'http://tinyarro.ws/api-create.php?host=ta.gd&suggest=_nounicode&utfpure=1&url=%s',
     'tinyurl.com'   :   'http://tinyurl.com/api-create.php?url=%s',
-    'tr.im'         :   'http://api.tr.im/v1/trim_simple?url=%s',
-    'u.nu'          :   'http://u.nu/unu-api-simple?url=%s',
+    'x90.es'        :   'http://x90.es/api.php?action=shorturl&format=simple&url=%s',
     'xrl.us'        :   'http://metamark.net/api/rest/simple?long_url=%s',
-    'zi.ma'         :   'http://zi.ma/?module=ShortURL&file=Add&mode=API&url=%s',
-
-# XXX TODO
-# More sources for information on URL shorteners:
-# http://en.wikipedia.org/wiki/URL_shortening
-# http://lists.econsultant.com/top-10-url-redirection-services.html
-# http://searchengineland.com/analysis-which-url-shortening-service-should-you-use-17204
 
 #------------------------------------#
 # Unsupported URL shortener services #
 #------------------------------------#
 
-# Works but it's painfully slow!
-#    'snick.me'      :   'http://snick.me/api/create.text?url=%s',
+# These used to work when this library was first published, but have since
+# either changed or deprecated their public APIs or made them authenticated.
+#'    bit.ly'        :   'http://bit.ly/api?url=%s',
+#    'cli.gs'        :   'http://cli.gs/api/v1/cligs/create?appid=urlshorten.py&url=%s',
+#    'cru.ms'        :   'http://cru.ms/?module=ShortURL&file=Add&mode=API&url=%s',
 
-# I don't support this response format yet (custom? haven't seen it before).
-# May be easier to just switch it to JSON or whatever
-#    'z.pe'          :   'http://api.z.pe/new.txt?href=%s',
-
-# Uses unicode to shorten the urls and I don't support that yet.
-#    'tinyarro.ws'   :   'http://tinyarro.ws/api-create.php?utfpure=1&url=%s',
-
-# Forcefully places the target pages inside an iframe. I found more services
-# using the exact same that API don't misbehave (cru.ms, ito.mx, zi.ma), so I
-# guess someone made some ugly patches here. :P
-#    'itshrunk.com'  :   'http://itshrunk.com/?module=ShortURL&file=Add&mode=API&url=%s',
-
-# Bad sanity checks prevent urls outside of the USA to be shortened. >:(
-#    'urlz.at'       :   'http://urlz.at/yourls-api.php?action=shorturl&format=simple&url=%s',
-#    'pra.im'        :   'http://pra.im/api.php?url=%s',
-
-# Bad sanity checks, won't work with urls outside of the USA,
-# fails to understand what the "http://" part of the url means,
-# and won't let you drop the "www" from "www.piurl.com" (why?!).
-# There's only one way to describe this: EPIC FAIL.
+# These used to work when this library was first published, but no longer exist.
+#    'easyuri.com'   :   'http://easyuri.com/api.php?link=%s',
+#    'kl.am'         :   'http://kl.am/api/shorten/?url=%s&format=text',
+#    'onodot.com'    :   'http://onodot.com/api.php?url=%s',
+#    'shrten.com'    :   'http://shrten.com/api?url=%s',
+#    'www.thisurl.com':  'http://www.thisurl.com/?module=ShortURL&file=Add&mode=API&url=%s',
 #    'www.piurl.com' :   'http://www.piurl.com/api.php?url=%s',
+#    'pra.im'        :   'http://pra.im/api.php?url=%s',
+#    'snick.me'      :   'http://snick.me/api/create.text?url=%s',
+#    'thurly.net'    :   'http://thurly.net/api.php?id=%s',
+#    'tr.im'         :   'http://api.tr.im/v1/trim_simple?url=%s',
+#    'u.nu'          :   'http://u.nu/unu-api-simple?url=%s',
+#    'urlz.at'       :   'http://urlz.at/yourls-api.php?action=shorturl&format=simple&url=%s',
+#    'zi.ma'         :   'http://zi.ma/?module=ShortURL&file=Add&mode=API&url=%s',
 
 }
 
@@ -126,7 +105,7 @@ def is_short_url(url):
     """Determine if the given URL was shortened using one of the supported URL
     shortener services.
 
-    >>> is_short_url('http://bit.ly/3hDSUb')
+    >>> is_short_url('http://x90.es/5CA')
     True
     >>> is_short_url('http://www.example.com/')
     False
@@ -144,13 +123,13 @@ def is_short_url(url):
 
 #------------------------------------------------------------------------------
 
-def shorturl(url, service='bit.ly'):
+def shorturl(url, service='x90.es'):
     """Shorten a given URL.
 
     >>> shorturl('http://www.example.com')
-    'http://bit.ly/3hDSUb'
-    >>> shorturl('http://bit.ly/3hDSUb')
-    'http://bit.ly/6wi02P'
+    'http://x90.es/5CA'
+    >>> shorturl('http://x90.es/5CA', 'ito.mx')
+    'http://ito.mx/P-EL'
     >>> shorturl('http://www.example.com', 'tinyurl.com')
     'http://tinyurl.com/7567'
     >>> shorturl('http://www.example.com', None)
@@ -219,10 +198,14 @@ def shorturl(url, service='bit.ly'):
 def longurl(url):
     """Expand a shortened URL.
 
-    >>> longurl('http://bit.ly/3hDSUb')
+    >>> longurl('http://x90.es/5CA')
     'http://www.example.com/'
     >>> longurl('http://www.example.com/')
     'http://www.example.com/'
+
+    @note: This function tries to expand any shortened URL by following it
+        rather than using the API. This means if the service has statistics,
+        each time it's expanded it counts a new click.
 
     @type  url: str
     @param url: Shortened URL to expand.
@@ -315,16 +298,13 @@ def besturl(url):
     """Shorten the URL with the service that produces the best result.
 
     >>> besturl('http://www.example.com/')
-    'http://u.nu/63e'
+    'http://x90.es/5CZ'
 
     @type  url: str
     @param url: URL to shorten.
 
     @rtype:  str
     @return: Shortened URL. May be the same as the original URL.
-
-    @raise urllib2.HTTPError: A network error occured while accessing the URL
-        shortener service.
     """
     global verbose
 
@@ -338,7 +318,10 @@ def besturl(url):
             print "Service: %s" % service
         if len(best) < minlen + 8:      # +8 because it's "http://service/"
             break                   # it's sorted so no point in continuing
-        current = shorturl(url, service)
+        try:
+            current = shorturl(url, service)
+        except Exception:
+            continue
         if len(best) > len(current):
             best = current
     return best
@@ -430,57 +413,27 @@ def test(url_list = None, shorteners_list = None):
     This is a private function and you shouldn't need to use it.
 
     >>> test()
-    Testing bit.ly:
-	    Short [1]: http://bit.ly/3hDSUb
-	    Long  [0]: http://www.example.com/
-    Testing cli.gs:
-	    Short [1]: http://cli.gs/asA7h
-	    Long  [0]: http://www.example.com/
-    Testing cru.ms:
-	    Short [1]: http://cru.ms/b250d
-	    Long  [0]: http://www.example.com/
-    Testing easyuri.com:
-	    Short [1]: http://easyuri.com/65886
-	    Long  [0]: http://www.example.com/
     Testing is.gd:
-	    Short [1]: http://is.gd/61vFw
-	    Long  [0]: http://www.example.com/
+            Short [1]: http://is.gd/9INTbT
+            Long  [0]: http://www.google.com/
     Testing ito.mx:
-	    Short [1]: http://ito.mx/NVt
-	    Long  [0]: http://www.example.com/
-    Testing kl.am:
-	    Short [1]: http://kl.am/6exm
-	    Long  [0]: http://www.example.com/
+            Short [1]: http://ito.mx/P-EO
+            Long  [0]: http://www.google.com/
     Testing migre.me:
-	    Short [1]: http://migre.me/g3i9
-	    Long  [0]: http://www.example.com/
-    Testing onodot.com:
-	    Short [1]: http://onodot.com/mrxr
-	    Long  [0]: http://www.example.com/
-    Testing shrten.com:
-	    Short [1]: http://shrten.com/bwd
-	    Long  [0]: http://www.example.com/
-    Testing thurly.net:
-	    Short [1]: http://thurly.net//63h
-	    Long  [0]: http://www.example.com/
+            Short [1]: http://migre.me/cwzUO
+            Long  [0]: http://www.google.com/
+    Testing ta.gd:
+            Short [1]: http://ta.gd/google
+            Long  [0]: http://www.google.com/
     Testing tinyurl.com:
-	    Short [1]: http://tinyurl.com/d9kp
-	    Long  [0]: http://www.example.com/
-    Testing tr.im:
-	    Short [1]: http://tr.im/K0yJ
-	    Long  [0]: http://www.example.com/
-    Testing u.nu:
-	    Short [1]: http://u.nu/63e
-	    Long  [0]: http://www.example.com/
-    Testing www.thisurl.com:
-	    Short [1]: http://www.thisurl.com/186fd2
-	    Long  [0]: http://www.example.com/
+            Short [1]: http://tinyurl.com/161
+            Long  [0]: http://www.google.com/
+    Testing x90.es:
+            Short [1]: http://x90.es/m
+            Long  [0]: http://www.google.com/
     Testing xrl.us:
-	    Short [1]: http://xrl.us/bejo8g
-	    Long  [0]: http://www.example.com/
-    Testing zi.ma:
-	    Short [1]: http://zi.ma/e59960
-	    Long  [0]: http://www.example.com/
+            Short [1]: http://xrl.us/bnj
+            Long  [0]: http://www.google.com/
     """
 
     # Import the traceback module here rather than in the module itself.
@@ -490,7 +443,7 @@ def test(url_list = None, shorteners_list = None):
 
     # Process the parameters.
     if not url_list:
-        url_list = ['http://www.example.com/']
+        url_list = ['http://www.google.com/']
     if not shorteners_list:
         shorteners_list = list(shorteners)
         shorteners_list.sort()
@@ -649,6 +602,11 @@ if __name__ == '__main__':
 
 #------------------------------------------------------------------------------
 
+# More sources for information on URL shorteners:
+#   http://en.wikipedia.org/wiki/URL_shortening
+#   http://lists.econsultant.com/top-10-url-redirection-services.html
+#   http://searchengineland.com/analysis-which-url-shortening-service-should-you-use-17204
+
 # XXX TODO
 # Welcome to the huge list of things to be improved! :)
 #
@@ -666,11 +624,12 @@ if __name__ == '__main__':
 #   * Benchmark the speed of each URL shortener service.
 #
 # Features needed to support more services:
+#   * Authentication (bit.ly, cli.gs)
 #   * More content encodings like utf-8, gzip (xav.cc)
-#   * Multiple domains (shorturl.com, smrls.net, subdomaindirect.com)
+#   * Multiple domains (shorturl.com, smrls.net, subdomaindirect.com, tinyarro.ws)
 #   * HTML scanning when there's no API to use (to., hugeurl.com, nsfw.in,
-#     tiny.cc, urloo.com, lix.in, tnij.org, farturl.com, irt.me)
-#   * POST based apis (doiop.com, tweetburner.com)
+#     tiny.cc, urloo.com, lix.in, tnij.org, farturl.com, irt.me, ur1.ca)
+#   * POST based apis (cru.ms, doiop.com, tweetburner.com)
 #   * XML responses (go2cut.com, xav.cc, longurl.com)
 #   * JSON responses (icanhaz.com, urlenco.de, linkbee.com, rubyurl.com,
 #     retwt.me, rep.ly, mtny.mobi, nd-url)
